@@ -132,14 +132,15 @@ void openFile() {
 //===== SETUP =====//
 void setup() {
   GO.begin();
-  GO.lcd.setTextFont(4);
-  GO.lcd.setTextSize(4);
-  GO.lcd.setTextColor(LIGHTGRAY);
-  GO.lcd.println("Odroid GO Packet monitor");
-  GO.lcd.setTextColor(DARKGRAY);
+//  GO.lcd.setTextFont(2);
+  GO.lcd.setTextSize(3);
+  GO.lcd.setTextColor(LIGHTGREY);
+  GO.lcd.println("   Packet monitor");
+  GO.lcd.setTextColor(DARKGREY);
   GO.lcd.setTextSize(1);
-  GO.lcd.println("Copyright vitalinvent (c) 2022 __  __  _    _");
-  GO.lcd.setTextColor(LIGHTGRAY);
+  GO.lcd.println(" Odroid GO vitalinvent (c) 2022");
+  GO.lcd.println(" ________  __    __    _       _");
+  GO.lcd.setTextColor(LIGHTGREY);
   GO.lcd.setTextSize(2);
   GO.lcd.println("");
   GO.lcd.println("A - next channel B - previous channel");
@@ -151,18 +152,15 @@ void setup() {
   GO.lcd.println("Press any key to continue");
 
   boolean pressed=false;
-  while(!pressed){
-    if(GO.JOY_Y.isPressed()) pressed=true;
-    if(GO.JOY_X.isPressed()) pressed=true;
-    if(GO.BtnA.isPressed()) pressed=true;
-    if(GO.BtnB.isPressed()) pressed=true;
-    if(GO.BtnMenu.isPressed()) pressed=true;
-    if(GO.BtnVolume.isPressed()) pressed=true;
-    if(GO.BtnSelect.isPressed()) pressed=true;
-    if(GO.BtnStart.isPressed()) pressed=true;
+  int cnt=0;
+  while(pressed){
+    if(GO.JOY_Y.isPressed() || GO.JOY_X.isPressed() || GO.BtnA.isPressed() || 
+        GO.BtnB.isPressed() || GO.BtnMenu.isPressed() || GO.BtnVolume.isPressed() || 
+        GO.BtnSelect.isPressed() || GO.BtnStart.isPressed()) {pressed=true;}
+    dekay(1000);
+    if (cnt>10) {pressed=true;}
+    cnt++;
   }
-
-  delay(2000);
   Serial.println();
 
 //  /* initialize SD card */
@@ -220,7 +218,7 @@ double getMultiplicator() {
     if (pkts[i] > maxVal) maxVal = pkts[i];
   }
   if (maxVal > MAX_Y) return (double)MAX_Y / (double)maxVal;
-  else return 1;
+  else return 5;
 }
 
 void loop() {
@@ -232,12 +230,13 @@ void loop() {
     tmpPacketCounter = 0;
     GO.lcd.clearDisplay();
 
-    GO.lcd.drawString((String)ch,0,241); 
+    GO.lcd.drawString("channel: "+(String)ch,0,231); 
     pkts[MAX_X - 1] = tmpPacketCounter;
     int len;
     GO.lcd.drawLine(0, 230 - MAX_Y, MAX_X, 230 - MAX_Y,ILI9341_DARKGREY);
     for (int i = 0; i < MAX_X; i++) {
       len = pkts[i] * getMultiplicator();
+      GO.lcd.setTextSize(1);
       GO.lcd.drawLine(i, 230, i, 230 - (len > MAX_Y ? MAX_Y : len),ILI9341_DARKGREY);
       if (i < MAX_X - 1) pkts[i] = pkts[i + 1];
     }
@@ -251,6 +250,16 @@ void loop() {
     wifi_second_chan_t secondCh = (wifi_second_chan_t)NULL;
     esp_wifi_set_channel(ch, secondCh);
   }
+
+  if (GO.BtnB.isPressed()) {
+    ch--; //derease channel
+    if (ch < 0) ch = MAX_CHANNEL;
+    tmpPacketCounter = 0;
+    GO.lcd.clearDisplay();
+    wifi_second_chan_t secondCh = (wifi_second_chan_t)NULL;
+    esp_wifi_set_channel(ch, secondCh);
+  }
+
   
 //
 //  /* for every second */
