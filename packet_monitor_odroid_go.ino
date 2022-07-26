@@ -218,7 +218,7 @@ double getMultiplicator() {
     if (pkts[i] > maxVal) maxVal = pkts[i];
   }
   if (maxVal > MAX_Y) return (double)MAX_Y / (double)maxVal;
-  else return 5;
+  else return 8;
 }
 
 void loop() {
