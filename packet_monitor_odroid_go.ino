@@ -1,11 +1,4 @@
-/*
-  ===========================================
-       Copyright (c) 2017 Stefan Kremser
-              github.com/spacehuhn
-  ===========================================
-*/
-
-#include <odroid_go.h>
+//#include <odroid_go.h>
 /* include all necessary libraries */
 #include "freertos/FreeRTOS.h"
 #include "esp_wifi.h"
@@ -23,6 +16,8 @@
 //#include "SD.h"
 #include "SPI.h"
 #include <PCAP.h>
+#include "Menu.h"
+#include <Preferences.h>
 
 //===== SETTINGS =====//
 #define CHANNEL 1
@@ -50,6 +45,8 @@ uint32_t tmpPacketCounter;
 uint32_t pkts[MAX_X];       // here the packets per second will be saved
 
 PCAP pcap = PCAP();
+Menu menu;
+Preferences preferences;
 
 //===== FUNCTIONS =====//
 
@@ -135,13 +132,11 @@ void setup() {
 //  GO.lcd.setTextFont(2);
   GO.lcd.setTextSize(3);
   GO.lcd.setTextColor(LIGHTGREY);
-  GO.lcd.println("   Packet monitor");
+  GO.lcd.println("   Packet monitor  ");
   GO.lcd.setTextColor(DARKGREY);
   GO.lcd.setTextSize(1);
-  GO.lcd.println(" Odroid GO vitalinvent (c) 2022");
-  GO.lcd.println(" ________  __    __    _       _");
-  GO.lcd.setTextColor(LIGHTGREY);
-  GO.lcd.setTextSize(2);
+  GO.lcd.println(" Odroid GO 2022");
+  GO.lcd.println(" ______  __   __   _     _");
   GO.lcd.println("");
   GO.lcd.println("A - next channel B - previous channel");
   GO.lcd.println("");
@@ -153,11 +148,11 @@ void setup() {
 
   boolean pressed=false;
   int cnt=0;
-  while(pressed){
-    if(GO.JOY_Y.isPressed() || GO.JOY_X.isPressed() || GO.BtnA.isPressed() || 
-        GO.BtnB.isPressed() || GO.BtnMenu.isPressed() || GO.BtnVolume.isPressed() || 
-        GO.BtnSelect.isPressed() || GO.BtnStart.isPressed()) {pressed=true;}
-    dekay(1000);
+  while(!pressed){
+    if(GO.BtnA.isPressed() || GO.BtnB.isPressed() || GO.BtnMenu.isPressed() 
+    || GO.BtnVolume.isPressed() || GO.BtnSelect.isPressed() || 
+    GO.BtnStart.isPressed()) {pressed=true;}
+    delay(1000);
     if (cnt>10) {pressed=true;}
     cnt++;
   }
@@ -218,12 +213,13 @@ double getMultiplicator() {
     if (pkts[i] > maxVal) maxVal = pkts[i];
   }
   if (maxVal > MAX_Y) return (double)MAX_Y / (double)maxVal;
-  else return 8;
+  else return 11;
 }
 
 void loop() {
   unsigned long currentTime = millis();
   GO.update();
+  delay(100);
   /* for every xxx miliseconds */
   if (currentTime - lastTime > 500) {
     lastTime = currentTime; //update time
@@ -241,7 +237,11 @@ void loop() {
       if (i < MAX_X - 1) pkts[i] = pkts[i + 1];
     }
   }
-  
+
+  if (GO.BtnMenu.isPressed()) {
+    menu.show();
+  }
+    
   if (GO.BtnA.isPressed()) {
     ch++; //increase channel
     if (ch > MAX_CHANNEL) ch = 1;
