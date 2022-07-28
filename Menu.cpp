@@ -22,6 +22,7 @@ Menu::Menu(){
 void Menu::show(){
   boolean exitMenu=false;
   boolean pressed=false;
+  draw();
   while(!exitMenu){
 
 //    if(GO.BtnA.isPressed() || GO.BtnB.isPressed() || GO.BtnMenu.isPressed() 
@@ -41,10 +42,10 @@ void Menu::show(){
     if (currentItem>MENU_SIZE){ currentItem=0;}
     if (currentItem<0){ currentItem=MENU_SIZE;}
 
-    if (GO.BtnMenu.wasPressed()) {
-          exitMenu=true;
-    }
-
+//    if (GO.BtnMenu.wasPressed()) {
+//          exitMenu=true;
+//    }
+//
     if (GO.BtnA.wasPressed()) {
           if (menu[currentItem]=="Exit"){
             exitMenu=true;
@@ -52,7 +53,6 @@ void Menu::show(){
     }
 
     if (pressed==true){
-      GO.lcd.clearDisplay();
       draw();
     }
 

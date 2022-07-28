@@ -43,6 +43,8 @@ byte lcdLineCount = 0;
 bool snifferRunning = true;
 uint32_t tmpPacketCounter;
 uint32_t pkts[MAX_X];       // here the packets per second will be saved
+uint32_t pktsd[MAX_X];       // here the packets deauth per second will be saved
+uint32_t deauths = 0; // deauth frames per second
 
 PCAP pcap = PCAP();
 Menu menu;
@@ -52,7 +54,13 @@ Preferences preferences;
 
 /* will be executed on every packet the ESP32 gets while beeing in promiscuous mode */
 void sniffer(void *buf, wifi_promiscuous_pkt_type_t type) {
+  wifi_promiscuous_pkt_t* pkt = (wifi_promiscuous_pkt_t*)buf;
+  wifi_pkt_rx_ctrl_t ctrl = (wifi_pkt_rx_ctrl_t)pkt->rx_ctrl;
+
+  if (type == WIFI_PKT_MGMT && (pkt->payload[0] == 0xA0 || pkt->payload[0] == 0xC0 )) deauths++;
+  
   tmpPacketCounter++;
+  
 //  if (fileOpen) {
 //    wifi_promiscuous_pkt_t* pkt = (wifi_promiscuous_pkt_t*)buf;
 //    wifi_pkt_rx_ctrl_t ctrl = (wifi_pkt_rx_ctrl_t)pkt->rx_ctrl;
@@ -139,9 +147,10 @@ void setup() {
   GO.lcd.println(" ______  __   __   _     _");
   GO.lcd.println("");
   GO.lcd.println("A - next channel B - previous channel");
-  GO.lcd.println("");
-  GO.lcd.println("");
-  GO.lcd.println("");
+  GO.lcd.println("Menu - show menu, Sound - toggle sound");
+  GO.lcd.println("Select - clear, Start - pause");
+  GO.lcd.println("Light graph show count deauth packets");
+  GO.lcd.println("Dark graph show count all packets");
   GO.lcd.println("");
   GO.lcd.println("");
   GO.lcd.println("Press any key to continue");
@@ -149,11 +158,11 @@ void setup() {
   boolean pressed=false;
   int cnt=0;
   while(!pressed){
+    delay(500);
     if(GO.BtnA.isPressed() || GO.BtnB.isPressed() || GO.BtnMenu.isPressed() 
     || GO.BtnVolume.isPressed() || GO.BtnSelect.isPressed() || 
     GO.BtnStart.isPressed()) {pressed=true;}
-    delay(1000);
-    if (cnt>10) {pressed=true;}
+    if (cnt>30) {pressed=true;}
     cnt++;
   }
   Serial.println();
@@ -226,20 +235,42 @@ void loop() {
     tmpPacketCounter = 0;
     GO.lcd.clearDisplay();
 
-    GO.lcd.drawString("channel: "+(String)ch,0,231); 
+    GO.lcd.drawString("| ch "+(String)ch+"",0,231); 
+    GO.lcd.drawString("| pkts "+(String)tmpPacketCounter+" ",45,231); 
+    GO.lcd.drawString("| deth "+(String)deauths+" ",120,231); 
     pkts[MAX_X - 1] = tmpPacketCounter;
-    int len;
+    pktsd[MAX_X - 1] = deauths;
+    int len,lend;
     GO.lcd.drawLine(0, 230 - MAX_Y, MAX_X, 230 - MAX_Y,ILI9341_DARKGREY);
     for (int i = 0; i < MAX_X; i++) {
       len = pkts[i] * getMultiplicator();
+      lend = pktsd[i] * getMultiplicator();
       GO.lcd.setTextSize(1);
       GO.lcd.drawLine(i, 230, i, 230 - (len > MAX_Y ? MAX_Y : len),ILI9341_DARKGREY);
+      GO.lcd.drawLine(i, 230, i, 230 - (lend > MAX_Y ? MAX_Y : lend),ILI9341_LIGHTGREY);
       if (i < MAX_X - 1) pkts[i] = pkts[i + 1];
+      if (i < MAX_X - 1) pktsd[i] = pktsd[i + 1];
     }
   }
 
   if (GO.BtnMenu.isPressed()) {
     menu.show();
+    delay(1000);
+  }
+
+  if (GO.BtnSelect.isPressed()) {
+    tmpPacketCounter = 0;
+    GO.lcd.clearDisplay();
+    for(int i=0;i<320;i++){
+      pkts[i]=0;
+      pktsd[i]=0;
+    }
+  }
+
+  if (GO.BtnStart.isPressed()) {
+    delay(1000);
+    while(!GO.BtnStart.isPressed()){      
+    }
   }
     
   if (GO.BtnA.isPressed()) {
